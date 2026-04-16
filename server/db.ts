@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, lessons, InsertLesson, refinements, InsertRefinement, sessions } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,64 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createLesson(userId: number, data: Omit<InsertLesson, 'userId'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(lessons).values({
+    ...data,
+    userId,
+  });
+  
+  return result;
+}
+
+export async function getLessonsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(lessons).where(eq(lessons.userId, userId)).orderBy(desc(lessons.createdAt));
+  return result;
+}
+
+export async function getLessonById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createRefinement(lessonId: number, data: Omit<InsertRefinement, 'lessonId'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(refinements).values({
+    ...data,
+    lessonId,
+  });
+}
+
+export async function getRefinementsByLesson(lessonId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(refinements).where(eq(refinements.lessonId, lessonId)).orderBy(refinements.createdAt);
+}
+
+export async function createSession(userId: number, sessionName: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(sessions).values({
+    userId,
+    sessionName,
+  });
+}
+
+export async function getSessionsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.updatedAt));
+}

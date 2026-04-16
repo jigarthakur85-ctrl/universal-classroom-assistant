@@ -25,4 +25,47 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Lessons table: stores AI-generated lesson content (Simplify Concept, Class Activity, Check Understanding)
+ */
+export const lessons = mysqlTable("lessons", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  class: varchar("class", { length: 10 }).notNull(), // e.g., "1", "10", "11-Science"
+  subject: varchar("subject", { length: 64 }).notNull(), // e.g., "Mathematics", "Physics"
+  topic: text("topic").notNull(), // e.g., "Newton's Third Law"
+  toolType: mysqlEnum("toolType", ["simplify", "activity", "understanding"]).notNull(),
+  content: text("content").notNull(), // AI-generated response
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Lesson = typeof lessons.$inferSelect;
+export type InsertLesson = typeof lessons.$inferInsert;
+
+/**
+ * Refinements table: stores follow-up refinements and AI responses
+ */
+export const refinements = mysqlTable("refinements", {
+  id: int("id").autoincrement().primaryKey(),
+  lessonId: int("lessonId").notNull().references(() => lessons.id, { onDelete: "cascade" }),
+  refinementType: varchar("refinementType", { length: 64 }).notNull(), // e.g., "Make simpler", "Add examples", "Shorter", or custom text
+  refinedContent: text("refinedContent").notNull(), // AI-refined response
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Refinement = typeof refinements.$inferSelect;
+export type InsertRefinement = typeof refinements.$inferInsert;
+
+/**
+ * Sessions table: tracks user sessions for conversation history
+ */
+export const sessions = mysqlTable("sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionName: varchar("sessionName", { length: 255 }).notNull(), // e.g., "Class 10 Physics - Nov 16"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = typeof sessions.$inferInsert;
