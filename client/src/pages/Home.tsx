@@ -83,22 +83,22 @@ export default function Home() {
       });
 
       const newLesson: LessonItem = {
-        id: Math.random(),
+        id: result.id,
         class: selectedClass,
         subject: selectedSubject,
         topic,
         toolType,
         content: result.content,
-        createdAt: new Date(),
+        createdAt: result.createdAt || new Date(),
       };
       
       // If Check Understanding, show answer reveal button
       if (toolType === 'understanding') {
-        setShowAnswers(new Map(showAnswers).set(newLesson.id, false));
+        setShowAnswers(new Map(showAnswers).set(result.id, false));
       }
 
       setLessons([...lessons, newLesson]);
-      setSelectedLessonId(newLesson.id);
+      setSelectedLessonId(result.id);
     } catch (error) {
       console.error('Error generating content:', error);
       alert('Error generating content. Please try again.');
@@ -108,7 +108,7 @@ export default function Home() {
   };
 
   const handleRefine = async (refinementType: string) => {
-    if (!selectedLessonId || !refinementType.trim()) return;
+    if (selectedLessonId === null || !refinementType.trim()) return;
 
     setIsLoading(true);
 
@@ -119,11 +119,11 @@ export default function Home() {
       });
 
       const newRefinement: RefinementItem = {
-        id: Math.random(),
+        id: result.id,
         lessonId: selectedLessonId,
         refinementType,
         refinedContent: result.refinedContent,
-        createdAt: new Date(),
+        createdAt: result.createdAt || new Date(),
       };
 
       const lessonRefinements = refinements.get(selectedLessonId) || [];

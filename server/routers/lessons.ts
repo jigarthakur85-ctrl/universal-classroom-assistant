@@ -22,21 +22,21 @@ const systemPrompts = {
 Your role is to simplify complex educational concepts into clear, engaging explanations that teachers can use in their classrooms.
 Create simple stories, real-life analogies, and practical examples that make the concept memorable and easy to understand.
 Keep the explanation concise but comprehensive, suitable for classroom teaching.
-${language === 'hindi' ? 'IMPORTANT: Provide the explanation in BOTH Hindi and English. Start with the Hindi explanation, then provide the English explanation. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the explanation in English only.'}`,
+${language === 'hindi' ? 'Provide the explanation in Hindi ONLY. Do not include English.' : 'Provide the explanation in English ONLY. Do not include Hindi.'}`,
 
   activity: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to suggest engaging, hands-on classroom activities that help students understand the given topic.
 Suggest a 2-minute activity that is practical, requires minimal resources, and can be done in a classroom setting.
 Make it interactive and fun while ensuring it reinforces the learning objective.
 Include clear instructions and expected learning outcomes.
-${language === 'hindi' ? 'IMPORTANT: Provide the activity in BOTH Hindi and English. Start with the Hindi version, then provide the English version. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the activity in English only.'}`,
+${language === 'hindi' ? 'Provide the activity in Hindi ONLY. Do not include English.' : 'Provide the activity in English ONLY. Do not include Hindi.'}`,
 
   understanding: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to generate assessment questions that test student understanding of the given topic.
 Create 3 conceptual questions (not just factual recall) that help teachers assess if students truly understand the concept.
 Include questions that require analysis, application, or synthesis of the concept.
 Format each question clearly with a separate section for answers.
-${language === 'hindi' ? 'IMPORTANT: Provide the questions and answers in BOTH Hindi and English. Start with Hindi, then provide English. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the questions and answers in English only.'}
+${language === 'hindi' ? 'Provide the questions and answers in Hindi ONLY. Do not include English.' : 'Provide the questions and answers in English ONLY. Do not include Hindi.'}
 For Check Understanding, format your response as:
 QUESTION 1: [question text]
 ANSWER 1: [answer text]
@@ -85,10 +85,17 @@ Please provide content for the "${input.toolType === 'simplify' ? 'Simplify Conc
         };
         
         const lessonResult = await createLesson(ctx.user.id, lessonData);
-        const lessonId = (lessonResult as any).insertId || Math.floor(Math.random() * 1000000);
+        const lessonId = (lessonResult as any).insertId;
+        
+        if (!lessonId) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create lesson",
+          });
+        }
         
         // Extract and store answers for Check Understanding
-        if (input.toolType === 'understanding' && lessonId) {
+        if (input.toolType === 'understanding') {
           const answers = extractAnswers(content);
           if (answers.length > 0) {
             try {
@@ -143,7 +150,8 @@ Please provide content for the "${input.toolType === 'simplify' ? 'Simplify Conc
 ${lesson.content}
 
 Please refine this content based on the following request: "${input.refinementType}"
-Maintain the same format and style, but apply the requested refinement.`;
+Maintain the same format and style, but apply the requested refinement.
+${lesson.language === 'hindi' ? 'Provide the refined content in Hindi ONLY.' : 'Provide the refined content in English ONLY.'}`;
 
         const response = await invokeLLM({
           messages: [
@@ -162,13 +170,13 @@ Maintain the same format and style, but apply the requested refinement.`;
           });
         }
 
-        await createRefinement(input.lessonId, {
+        const refinementResult = await createRefinement(input.lessonId, {
           refinementType: input.refinementType,
           refinedContent,
         });
 
         return {
-          id: Math.floor(Math.random() * 1000000),
+          id: (refinementResult as any).insertId || Math.floor(Math.random() * 1000000),
           lessonId: input.lessonId,
           refinementType: input.refinementType,
           refinedContent,
