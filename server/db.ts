@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, lessons, InsertLesson, refinements, InsertRefinement, sessions } from "../drizzle/schema";
+import { InsertUser, users, lessons, InsertLesson, refinements, InsertRefinement, sessions, answers, InsertAnswer } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -149,4 +149,23 @@ export async function getSessionsByUser(userId: number) {
   if (!db) throw new Error("Database not available");
   
   return db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.updatedAt));
+}
+
+export async function createAnswers(lessonId: number, answersList: Array<{ questionNumber: number; answerText: string }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const answersData = answersList.map(answer => ({
+    ...answer,
+    lessonId,
+  }));
+  
+  return db.insert(answers).values(answersData);
+}
+
+export async function getAnswersByLesson(lessonId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(answers).where(eq(answers.lessonId, lessonId)).orderBy(answers.questionNumber);
 }

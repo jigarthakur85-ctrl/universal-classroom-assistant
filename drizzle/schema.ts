@@ -35,12 +35,27 @@ export const lessons = mysqlTable("lessons", {
   subject: varchar("subject", { length: 64 }).notNull(), // e.g., "Mathematics", "Physics"
   topic: text("topic").notNull(), // e.g., "Newton's Third Law"
   toolType: mysqlEnum("toolType", ["simplify", "activity", "understanding"]).notNull(),
+  language: mysqlEnum("language", ["english", "hindi"]).default("english").notNull(), // Language for content generation
   content: text("content").notNull(), // AI-generated response
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type Lesson = typeof lessons.$inferSelect;
 export type InsertLesson = typeof lessons.$inferInsert;
+
+/**
+ * Answers table: stores answers for Check Understanding questions
+ */
+export const answers = mysqlTable("answers", {
+  id: int("id").autoincrement().primaryKey(),
+  lessonId: int("lessonId").notNull().references(() => lessons.id, { onDelete: "cascade" }),
+  questionNumber: int("questionNumber").notNull(), // 1, 2, 3 for the three questions
+  answerText: text("answerText").notNull(), // Answer content
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Answer = typeof answers.$inferSelect;
+export type InsertAnswer = typeof answers.$inferInsert;
 
 /**
  * Refinements table: stores follow-up refinements and AI responses

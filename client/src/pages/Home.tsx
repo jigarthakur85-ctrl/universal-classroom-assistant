@@ -25,14 +25,25 @@ interface RefinementItem {
   createdAt: Date;
 }
 
+interface AnswerItem {
+  id: number;
+  lessonId: number;
+  questionNumber: number;
+  answerText: string;
+  createdAt: Date;
+}
+
 export default function Home() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [selectedClass, setSelectedClass] = useState<ClassLevel>('10');
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [topic, setTopic] = useState('');
+  const [language, setLanguage] = useState<'english' | 'hindi'>('english');
   const [isLoading, setIsLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [refinements, setRefinements] = useState<Map<number, RefinementItem[]>>(new Map());
+  const [answers, setAnswers] = useState<Map<number, AnswerItem[]>>(new Map());
+  const [showAnswers, setShowAnswers] = useState<Map<number, boolean>>(new Map());
   const [refinementInput, setRefinementInput] = useState('');
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,6 +79,7 @@ export default function Home() {
         subject: selectedSubject,
         topic,
         toolType,
+        language,
       });
 
       const newLesson: LessonItem = {
@@ -79,6 +91,11 @@ export default function Home() {
         content: result.content,
         createdAt: new Date(),
       };
+      
+      // If Check Understanding, show answer reveal button
+      if (toolType === 'understanding') {
+        setShowAnswers(new Map(showAnswers).set(newLesson.id, false));
+      }
 
       setLessons([...lessons, newLesson]);
       setSelectedLessonId(newLesson.id);
@@ -211,6 +228,18 @@ export default function Home() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Language</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as 'english' | 'hindi')}
+                  className="select-glass"
+                >
+                  <option value="english">English</option>
+                  <option value="hindi">हिंदी (Hindi)</option>
+                </select>
+              </div>
+
               <div className="space-y-3">
                 <button
                   onClick={() => handleGenerateContent('simplify')}
@@ -282,6 +311,33 @@ export default function Home() {
                               <Streamdown className="text-foreground">{ref.refinedContent}</Streamdown>
                             </div>
                           ))}
+                        </div>
+                      )}
+
+                      {selectedLessonId === lesson.id && lesson.toolType === 'understanding' && (
+                        <button
+                          onClick={() => setShowAnswers(new Map(showAnswers).set(lesson.id, !showAnswers.get(lesson.id)))}
+                          className="btn-glass w-full mb-3"
+                        >
+                          {showAnswers.get(lesson.id) ? 'Hide Answers' : 'Show Answers'}
+                        </button>
+                      )}
+
+                      {selectedLessonId === lesson.id && showAnswers.get(lesson.id) && lesson.toolType === 'understanding' && (
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-3">
+                          <p className="text-xs font-semibold text-amber-300 mb-3">📝 Expected Answers</p>
+                          <div className="space-y-2">
+                            {[1, 2, 3].map((qNum) => {
+                              const answerMatch = lesson.content.match(new RegExp(`ANSWER\\s+${qNum}:\\s*(.+?)(?=QUESTION|ANSWER|$)`, 'i'));
+                              if (!answerMatch) return null;
+                              return (
+                                <div key={qNum} className="text-sm">
+                                  <p className="font-semibold text-amber-200 mb-1">Answer {qNum}:</p>
+                                  <p className="text-foreground/80 text-xs">{answerMatch[1].trim().substring(0, 200)}...</p>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
 

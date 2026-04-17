@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { createLesson, getLessonsByUser, createRefinement, getRefinementsByLesson } from "../db";
+import { createLesson, getLessonsByUser, createRefinement, getRefinementsByLesson, createAnswers, getAnswersByLesson, getLessonById } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { TRPCError } from "@trpc/server";
 
@@ -9,6 +9,7 @@ const GenerateLessonInput = z.object({
   subject: z.string(),
   topic: z.string(),
   toolType: z.enum(["simplify", "activity", "understanding"]),
+  language: z.enum(["english", "hindi"]).default("english"),
 });
 
 const RefineLessonInput = z.object({
@@ -17,22 +18,32 @@ const RefineLessonInput = z.object({
 });
 
 const systemPrompts = {
-  simplify: `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum. 
+  simplify: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum. 
 Your role is to simplify complex educational concepts into clear, engaging explanations that teachers can use in their classrooms.
 Create simple stories, real-life analogies, and practical examples that make the concept memorable and easy to understand.
-Keep the explanation concise but comprehensive, suitable for classroom teaching.`,
+Keep the explanation concise but comprehensive, suitable for classroom teaching.
+${language === 'hindi' ? 'IMPORTANT: Provide the explanation in BOTH Hindi and English. Start with the Hindi explanation, then provide the English explanation. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the explanation in English only.'}`,
 
-  activity: `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
+  activity: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to suggest engaging, hands-on classroom activities that help students understand the given topic.
 Suggest a 2-minute activity that is practical, requires minimal resources, and can be done in a classroom setting.
 Make it interactive and fun while ensuring it reinforces the learning objective.
-Include clear instructions and expected learning outcomes.`,
+Include clear instructions and expected learning outcomes.
+${language === 'hindi' ? 'IMPORTANT: Provide the activity in BOTH Hindi and English. Start with the Hindi version, then provide the English version. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the activity in English only.'}`,
 
-  understanding: `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
+  understanding: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to generate assessment questions that test student understanding of the given topic.
 Create 3 conceptual questions (not just factual recall) that help teachers assess if students truly understand the concept.
 Include questions that require analysis, application, or synthesis of the concept.
-Format each question clearly and provide expected answer hints.`,
+Format each question clearly with a separate section for answers.
+${language === 'hindi' ? 'IMPORTANT: Provide the questions and answers in BOTH Hindi and English. Start with Hindi, then provide English. Clearly separate them with "---ENGLISH---" marker.' : 'Provide the questions and answers in English only.'}
+For Check Understanding, format your response as:
+QUESTION 1: [question text]
+ANSWER 1: [answer text]
+QUESTION 2: [question text]
+ANSWER 2: [answer text]
+QUESTION 3: [question text]
+ANSWER 3: [answer text]`,
 };
 
 export const lessonsRouter = router({
@@ -40,7 +51,7 @@ export const lessonsRouter = router({
     .input(GenerateLessonInput)
     .mutation(async ({ ctx, input }) => {
       try {
-        const systemPrompt = systemPrompts[input.toolType];
+        const systemPrompt = systemPrompts[input.toolType](input.language);
         const userPrompt = `Class: ${input.class}
 Subject: ${input.subject}
 Topic/Chapter: ${input.topic}
@@ -69,16 +80,32 @@ Please provide content for the "${input.toolType === 'simplify' ? 'Simplify Conc
           subject: input.subject,
           topic: input.topic,
           toolType: input.toolType,
+          language: input.language,
           content,
         };
-        await createLesson(ctx.user.id, lessonData);
+        
+        const lessonResult = await createLesson(ctx.user.id, lessonData);
+        const lessonId = (lessonResult as any).insertId || Math.floor(Math.random() * 1000000);
+        
+        // Extract and store answers for Check Understanding
+        if (input.toolType === 'understanding' && lessonId) {
+          const answers = extractAnswers(content);
+          if (answers.length > 0) {
+            try {
+              await createAnswers(lessonId, answers);
+            } catch (e) {
+              console.warn("Failed to store answers:", e);
+            }
+          }
+        }
 
         return {
-          id: Math.random(),
+          id: lessonId,
           class: input.class,
           subject: input.subject,
           topic: input.topic,
           toolType: input.toolType,
+          language: input.language,
           content,
           createdAt: new Date(),
         };
@@ -111,7 +138,7 @@ Please provide content for the "${input.toolType === 'simplify' ? 'Simplify Conc
           });
         }
 
-        const systemPrompt = systemPrompts[lesson.toolType];
+        const systemPrompt = systemPrompts[lesson.toolType](lesson.language);
         const userPrompt = `Original content:
 ${lesson.content}
 
@@ -141,7 +168,7 @@ Maintain the same format and style, but apply the requested refinement.`;
         });
 
         return {
-          id: Math.random(),
+          id: Math.floor(Math.random() * 1000000),
           lessonId: input.lessonId,
           refinementType: input.refinementType,
           refinedContent,
@@ -199,16 +226,57 @@ Maintain the same format and style, but apply the requested refinement.`;
         });
       }
     }),
+
+  getAnswers: protectedProcedure
+    .input(z.object({ lessonId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const lesson = await getLessonById(input.lessonId);
+
+        if (!lesson) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Lesson not found",
+          });
+        }
+
+        if (lesson.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to view this lesson",
+          });
+        }
+
+        const answers = await getAnswersByLesson(input.lessonId);
+        return answers;
+      } catch (error) {
+        console.error("Error fetching answers:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch answers",
+        });
+      }
+    }),
 });
 
-async function getLessonById(id: number) {
-  const { getDb } = await import("../db");
-  const { lessons } = await import("../../drizzle/schema");
-  const { eq } = await import("drizzle-orm");
-
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+function extractAnswers(content: string): Array<{ questionNumber: number; answerText: string }> {
+  const answers: Array<{ questionNumber: number; answerText: string }> = [];
+  
+  // Pattern to match ANSWER 1: ..., ANSWER 2: ..., etc.
+  const answerPattern = /ANSWER\s+(\d+):\s*(.+?)(?=QUESTION|ANSWER|$)/gi;
+  let match;
+  
+  while ((match = answerPattern.exec(content)) !== null) {
+    const questionNumber = parseInt(match[1], 10);
+    const answerText = match[2].trim();
+    
+    if (answerText) {
+      answers.push({
+        questionNumber,
+        answerText,
+      });
+    }
+  }
+  
+  return answers;
 }
