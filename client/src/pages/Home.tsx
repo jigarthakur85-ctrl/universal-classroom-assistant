@@ -139,7 +139,7 @@ export default function Home() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-purple-400 animate-spin mx-auto mb-4" />
           <p className="text-foreground/70">Loading...</p>
@@ -150,7 +150,7 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="glass-lg p-8 mb-6">
             <BookOpen className="w-16 h-16 text-purple-400 mx-auto mb-4" />
@@ -171,7 +171,7 @@ export default function Home() {
   const currentRefinements = selectedLessonId !== null ? (refinements.get(selectedLessonId) || []) : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-black">
       <header className="bg-white/6 backdrop-blur-lg border border-white/10 border-b sticky top-0 z-40 backdrop-blur-xl">
         <div className="container py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
