@@ -9,7 +9,7 @@ const GenerateLessonInput = z.object({
   subject: z.string(),
   topic: z.string(),
   toolType: z.enum(["simplify", "activity", "understanding"]),
-  language: z.enum(["english", "hindi"]).default("english"),
+  language: z.enum(["english", "hindi", "other"]).default("english"),
 });
 
 const RefineLessonInput = z.object({
@@ -22,21 +22,21 @@ const systemPrompts = {
 Your role is to simplify complex educational concepts into clear, engaging explanations that teachers can use in their classrooms.
 Create simple stories, real-life analogies, and practical examples that make the concept memorable and easy to understand.
 Keep the explanation concise but comprehensive, suitable for classroom teaching.
-${language === 'hindi' ? 'Provide the explanation in Hindi ONLY. Do not include English.' : 'Provide the explanation in English ONLY. Do not include Hindi.'}`,
+${language === 'hindi' ? 'Provide the explanation in Hindi ONLY. Do not include English.' : language === 'other' ? 'Provide the explanation in the most appropriate language for the topic.' : 'Provide the explanation in English ONLY. Do not include Hindi.'}`,
 
   activity: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to suggest engaging, hands-on classroom activities that help students understand the given topic.
 Suggest a 2-minute activity that is practical, requires minimal resources, and can be done in a classroom setting.
 Make it interactive and fun while ensuring it reinforces the learning objective.
 Include clear instructions and expected learning outcomes.
-${language === 'hindi' ? 'Provide the activity in Hindi ONLY. Do not include English.' : 'Provide the activity in English ONLY. Do not include Hindi.'}`,
+${language === 'hindi' ? 'Provide the activity in Hindi ONLY. Do not include English.' : language === 'other' ? 'Provide the activity in the most appropriate language for the topic.' : 'Provide the activity in English ONLY. Do not include Hindi.'}`,
 
   understanding: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to generate assessment questions that test student understanding of the given topic.
 Create 3 conceptual questions (not just factual recall) that help teachers assess if students truly understand the concept.
 Include questions that require analysis, application, or synthesis of the concept.
 Format each question clearly with a separate section for answers.
-${language === 'hindi' ? 'Provide the questions and answers in Hindi ONLY. Do not include English.' : 'Provide the questions and answers in English ONLY. Do not include Hindi.'}
+${language === 'hindi' ? 'Provide the questions and answers in Hindi ONLY. Do not include English.' : language === 'other' ? 'Provide the questions and answers in the most appropriate language for the topic.' : 'Provide the questions and answers in English ONLY. Do not include Hindi.'}
 For Check Understanding, format your response as:
 QUESTION 1: [question text]
 ANSWER 1: [answer text]

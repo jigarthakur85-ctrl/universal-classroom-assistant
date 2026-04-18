@@ -93,12 +93,33 @@ export async function createLesson(userId: number, data: Omit<InsertLesson, 'use
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(lessons).values({
-    ...data,
-    userId,
-  });
-  
-  return result;
+  try {
+    const result = await db.insert(lessons).values({
+      ...data,
+      userId,
+    });
+    
+    // Try to extract insertId from result
+    const insertId = (result as any)?.insertId || (result as any)?.[0]?.insertId;
+    
+    if (insertId) {
+      return { insertId };
+    }
+    
+    // Fallback: fetch by userId and createdAt
+    const inserted = await db.select().from(lessons)
+      .where(eq(lessons.userId, userId))
+      .orderBy(desc(lessons.createdAt))
+      .limit(1);
+    
+    if (inserted.length > 0) {
+      return { insertId: inserted[0].id };
+    }
+    throw new Error("Failed to retrieve inserted lesson ID");
+  } catch (error) {
+    console.error("[Database] Failed to create lesson:", error);
+    throw error;
+  }
 }
 
 export async function getLessonsByUser(userId: number) {
@@ -121,51 +142,40 @@ export async function createRefinement(lessonId: number, data: Omit<InsertRefine
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return db.insert(refinements).values({
+  const result = await db.insert(refinements).values({
     ...data,
     lessonId,
   });
+  
+  return result;
 }
 
 export async function getRefinementsByLesson(lessonId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return db.select().from(refinements).where(eq(refinements.lessonId, lessonId)).orderBy(refinements.createdAt);
+  const result = await db.select().from(refinements).where(eq(refinements.lessonId, lessonId)).orderBy(desc(refinements.createdAt));
+  return result;
 }
 
-export async function createSession(userId: number, sessionName: string) {
+export async function createAnswers(lessonId: number, answersList: Array<Omit<InsertAnswer, 'lessonId'>>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return db.insert(sessions).values({
-    userId,
-    sessionName,
-  });
-}
-
-export async function getSessionsByUser(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const result = await db.insert(answers).values(
+    answersList.map(answer => ({
+      ...answer,
+      lessonId,
+    }))
+  );
   
-  return db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.updatedAt));
-}
-
-export async function createAnswers(lessonId: number, answersList: Array<{ questionNumber: number; answerText: string }>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const answersData = answersList.map(answer => ({
-    ...answer,
-    lessonId,
-  }));
-  
-  return db.insert(answers).values(answersData);
+  return result;
 }
 
 export async function getAnswersByLesson(lessonId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return db.select().from(answers).where(eq(answers.lessonId, lessonId)).orderBy(answers.questionNumber);
+  const result = await db.select().from(answers).where(eq(answers.lessonId, lessonId)).orderBy(desc(answers.createdAt));
+  return result;
 }

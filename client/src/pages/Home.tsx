@@ -38,7 +38,7 @@ export default function Home() {
   const [selectedClass, setSelectedClass] = useState<ClassLevel>('10');
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [topic, setTopic] = useState('');
-  const [language, setLanguage] = useState<'english' | 'hindi'>('english');
+  const [language, setLanguage] = useState<'english' | 'hindi' | 'other'>('english');
   const [isLoading, setIsLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [refinements, setRefinements] = useState<Map<number, RefinementItem[]>>(new Map());
@@ -232,11 +232,12 @@ export default function Home() {
                 <label className="block text-sm font-semibold text-foreground mb-2">Language</label>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'english' | 'hindi')}
+                  onChange={(e) => setLanguage(e.target.value as 'english' | 'hindi' | 'other')}
                   className="select-glass"
                 >
                   <option value="english">English</option>
                   <option value="hindi">हिंदी (Hindi)</option>
+                  <option value="other">Other Language</option>
                 </select>
               </div>
 

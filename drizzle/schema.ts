@@ -35,7 +35,7 @@ export const lessons = mysqlTable("lessons", {
   subject: varchar("subject", { length: 64 }).notNull(), // e.g., "Mathematics", "Physics"
   topic: text("topic").notNull(), // e.g., "Newton's Third Law"
   toolType: mysqlEnum("toolType", ["simplify", "activity", "understanding"]).notNull(),
-  language: mysqlEnum("language", ["english", "hindi"]).default("english").notNull(), // Language for content generation
+  language: mysqlEnum("language", ["english", "hindi", "other"]).default("english").notNull(), // Language for content generation
   content: text("content").notNull(), // AI-generated response
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
