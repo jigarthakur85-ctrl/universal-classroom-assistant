@@ -71,7 +71,7 @@ export default function Home() {
 
     setIsLoading(true);
     setRefinementInput('');
-    setSelectedLessonId(null);
+    setSelectedLessonId(null); // Auto-close previous content
 
     try {
       const result = await generateMutation.mutateAsync({
@@ -280,14 +280,19 @@ export default function Home() {
               ) : (
                 <>
                   {lessons.map((lesson) => (
-                    <div key={lesson.id} className="space-y-3">
+                    <div 
+                      key={lesson.id} 
+                      className={`space-y-3 transition-all duration-300 overflow-hidden ${
+                        selectedLessonId === lesson.id ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                    >
                       <div
                         onClick={() => setSelectedLessonId(lesson.id)}
                         className={`message-bubble message-ai cursor-pointer transition-all ${
                           selectedLessonId === lesson.id ? 'ring-2 ring-purple-500' : ''
                         }`}
                       >
-                        <div className="flex items-start gap-3 mb-2">
+                        <div className="flex items-start justify-between gap-3 mb-2">
                           <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             lesson.toolType === 'simplify' ? 'bg-green-500/20 text-green-300' :
                             lesson.toolType === 'activity' ? 'bg-blue-500/20 text-blue-300' :
@@ -297,6 +302,18 @@ export default function Home() {
                              lesson.toolType === 'activity' ? 'Class Activity' :
                              'Check Understanding'}
                           </div>
+                          {selectedLessonId === lesson.id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLessonId(null);
+                              }}
+                              className="text-foreground/50 hover:text-foreground transition-colors text-lg font-bold"
+                              title="Close"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
                         <p className="text-sm text-foreground/70 mb-3">
                           <span className="font-semibold">{lesson.subject}</span> • {lesson.topic}
