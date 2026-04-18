@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { getLoginUrl } from "@/const";
 import { CLASSES, CLASS_LABELS, SUBJECTS_BY_CLASS, ClassLevel, Subject } from "@shared/curriculum";
+import { INDIAN_LANGUAGE_OPTIONS, IndianLanguage } from "@shared/languages";
 import { Loader2, Sparkles, BookOpen, Lightbulb } from "lucide-react";
 import { Streamdown } from 'streamdown';
 import { trpc } from "@/lib/trpc";
@@ -39,6 +40,7 @@ export default function Home() {
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [topic, setTopic] = useState('');
   const [language, setLanguage] = useState<'english' | 'hindi' | 'other'>('english');
+  const [indianLanguage, setIndianLanguage] = useState<IndianLanguage>('gujarati');
   const [isLoading, setIsLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [refinements, setRefinements] = useState<Map<number, RefinementItem[]>>(new Map());
@@ -80,6 +82,7 @@ export default function Home() {
         topic,
         toolType,
         language,
+        indianLanguage: language === 'other' ? indianLanguage : undefined,
       });
 
       const newLesson: LessonItem = {
@@ -119,8 +122,8 @@ export default function Home() {
       });
 
       const newRefinement: RefinementItem = {
-        id: result.id,
-        lessonId: selectedLessonId,
+        id: Math.random(), // Temporary ID for UI
+        lessonId: selectedLessonId!,
         refinementType,
         refinedContent: result.refinedContent,
         createdAt: result.createdAt || new Date(),
@@ -241,6 +244,23 @@ export default function Home() {
                 </select>
               </div>
 
+              {language === 'other' && (
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Select Indian Language</label>
+                  <select
+                    value={indianLanguage}
+                    onChange={(e) => setIndianLanguage(e.target.value as IndianLanguage)}
+                    className="select-glass"
+                  >
+                    {INDIAN_LANGUAGE_OPTIONS.map((lang) => (
+                      <option key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <button
                   onClick={() => handleGenerateContent('simplify')}
@@ -323,8 +343,8 @@ export default function Home() {
 
                       {currentRefinements.length > 0 && selectedLessonId !== null && selectedLessonId === lesson.id && (
                         <div className="space-y-2 ml-4 border-l-2 border-purple-500/30 pl-4">
-                          {currentRefinements.map((ref) => (
-                            <div key={ref.id} className="message-bubble message-ai">
+                          {currentRefinements.map((ref, idx) => (
+                            <div key={idx} className="message-bubble message-ai">
                               <p className="text-xs text-purple-300 font-semibold mb-2">Refined: {ref.refinementType}</p>
                               <Streamdown className="text-foreground">{ref.refinedContent}</Streamdown>
                             </div>

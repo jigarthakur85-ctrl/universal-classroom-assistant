@@ -1,0 +1,1 @@
+ALTER TABLE `lessons` MODIFY COLUMN `language` enum('english','hindi','other','gujarati','marathi','punjabi','bengali','tamil','telugu','kannada','malayalam') NOT NULL DEFAULT 'english';
