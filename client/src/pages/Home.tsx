@@ -7,6 +7,7 @@ import { INDIAN_LANGUAGE_OPTIONS, IndianLanguage } from "@shared/languages";
 import { Loader2, Sparkles, BookOpen, Lightbulb } from "lucide-react";
 import { Streamdown } from 'streamdown';
 import { trpc } from "@/lib/trpc";
+import { toast } from 'sonner';
 
 interface LessonItem {
   id: number;
@@ -323,16 +324,33 @@ export default function Home() {
                              'Check Understanding'}
                           </div>
                           {selectedLessonId === lesson.id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedLessonId(null);
-                              }}
-                              className="text-foreground/50 hover:text-foreground transition-colors text-lg font-bold"
-                              title="Close"
-                            >
-                              ✕
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await navigator.clipboard.writeText(lesson.content);
+                                    toast.success('Copied to clipboard!');
+                                  } catch (err) {
+                                    toast.error('Failed to copy to clipboard');
+                                  }
+                                }}
+                                className="text-foreground/50 hover:text-foreground transition-colors text-lg"
+                                title="Copy to clipboard"
+                              >
+                                📋
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedLessonId(null);
+                                }}
+                                className="text-foreground/50 hover:text-foreground transition-colors text-lg font-bold"
+                                title="Close"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           )}
                         </div>
                         <p className="text-sm text-foreground/70 mb-3">
@@ -345,7 +363,23 @@ export default function Home() {
                         <div className="space-y-2 ml-4 border-l-2 border-purple-500/30 pl-4">
                           {currentRefinements.map((ref, idx) => (
                             <div key={idx} className="message-bubble message-ai">
-                              <p className="text-xs text-purple-300 font-semibold mb-2">Refined: {ref.refinementType}</p>
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <p className="text-xs text-purple-300 font-semibold">Refined: {ref.refinementType}</p>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(ref.refinedContent);
+                                      toast.success('Copied to clipboard!');
+                                    } catch (err) {
+                                      toast.error('Failed to copy to clipboard');
+                                    }
+                                  }}
+                                  className="text-foreground/50 hover:text-foreground transition-colors text-sm"
+                                  title="Copy refinement"
+                                >
+                                  📋
+                                </button>
+                              </div>
                               <Streamdown className="text-foreground">{ref.refinedContent}</Streamdown>
                             </div>
                           ))}
