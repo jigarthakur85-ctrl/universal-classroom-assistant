@@ -40,8 +40,7 @@ export default function Home() {
   const [selectedClass, setSelectedClass] = useState<ClassLevel>('10');
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [topic, setTopic] = useState('');
-  const [language, setLanguage] = useState<'english' | 'hindi' | 'other'>('english');
-  const [indianLanguage, setIndianLanguage] = useState<IndianLanguage>('gujarati');
+  const [language, setLanguage] = useState<'english' | 'hindi' | IndianLanguage>('english');
   const [isLoading, setIsLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [refinements, setRefinements] = useState<Map<number, RefinementItem[]>>(new Map());
@@ -83,7 +82,6 @@ export default function Home() {
         topic,
         toolType,
         language,
-        indianLanguage: language === 'other' ? indianLanguage : undefined,
       });
 
       const newLesson: LessonItem = {
@@ -103,7 +101,7 @@ export default function Home() {
 
       setLessons([...lessons, newLesson]);
       setSelectedLessonId(result.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating content:', error);
       alert('Error generating content. Please try again.');
     } finally {
@@ -236,31 +234,20 @@ export default function Home() {
                 <label className="block text-sm font-semibold text-foreground mb-2">Language</label>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'english' | 'hindi' | 'other')}
+                  onChange={(e) => setLanguage(e.target.value as 'english' | 'hindi' | IndianLanguage)}
                   className="select-glass"
                 >
                   <option value="english">English</option>
                   <option value="hindi">हिंदी (Hindi)</option>
-                  <option value="other">Other Language</option>
-                </select>
-              </div>
-
-              {language === 'other' && (
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Select Indian Language</label>
-                  <select
-                    value={indianLanguage}
-                    onChange={(e) => setIndianLanguage(e.target.value as IndianLanguage)}
-                    className="select-glass"
-                  >
+                  <optgroup label="Indian Languages">
                     {INDIAN_LANGUAGE_OPTIONS.map((lang) => (
                       <option key={lang.value} value={lang.value}>
                         {lang.label}
                       </option>
                     ))}
-                  </select>
-                </div>
-              )}
+                  </optgroup>
+                </select>
+              </div>
 
               <div className="space-y-3">
                 <button

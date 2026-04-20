@@ -188,3 +188,16 @@ The Universal Classroom Assistant is fully functional with:
 - [x] Show error toast: "Failed to copy to clipboard"
 - [x] Error handling with try-catch for clipboard operations
 - [x] Build successful with 0 TypeScript errors
+
+
+## PHASE 13: Consolidate Language Selector
+- [x] Move all Indian languages directly into main Language dropdown
+- [x] Remove separate Indian language selector box
+- [x] Language dropdown options: English, हिंदी, Gujarati, Marathi, Punjabi, Bengali, Tamil, Telugu, Kannada, Malayalam
+- [x] Direct language selection without secondary dropdown
+- [x] Update frontend to remove indianLanguage state
+- [x] Update backend schema to accept all language values directly
+- [x] Update database enum to include all Indian languages
+- [x] Apply database migration successfully
+- [x] Dev server running with 0 TypeScript errors
+- [x] App verified in browser - Language dropdown working

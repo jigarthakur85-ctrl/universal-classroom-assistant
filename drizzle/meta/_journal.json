@@ -43,6 +43,13 @@
       "when": 1776502780992,
       "tag": "0005_classy_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1776663325852,
+      "tag": "0006_solid_jigsaw",
+      "breakpoints": true
     }
   ]
 }

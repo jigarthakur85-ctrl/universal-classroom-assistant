@@ -9,8 +9,7 @@ const GenerateLessonInput = z.object({
   subject: z.string(),
   topic: z.string(),
   toolType: z.enum(["simplify", "activity", "understanding"]),
-  language: z.enum(["english", "hindi", "other"]).default("english"),
-  indianLanguage: z.string().optional(), // Specific Indian language name (e.g., "gujarati", "marathi")
+  language: z.enum(["english", "hindi", "gujarati", "marathi", "punjabi", "bengali", "tamil", "telugu", "kannada", "malayalam", "other"]).default("english"),
 });
 
 const RefineLessonInput = z.object({
@@ -66,7 +65,7 @@ export const lessonsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         // Use specific Indian language if selected, otherwise use main language
-        const promptLanguage = input.language === 'other' && input.indianLanguage ? input.indianLanguage : input.language;
+        const promptLanguage = input.language;
         const systemPrompt = systemPrompts[input.toolType](promptLanguage);
         
         const response = await invokeLLM({
