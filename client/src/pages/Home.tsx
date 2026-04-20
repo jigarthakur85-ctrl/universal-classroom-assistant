@@ -8,6 +8,8 @@ import { Loader2, Sparkles, BookOpen, Lightbulb } from "lucide-react";
 import { Streamdown } from 'streamdown';
 import { trpc } from "@/lib/trpc";
 import { toast } from 'sonner';
+import { startSpeechRecognition, stopSpeechRecognition, speakText, stopSpeech, getLanguageCode, isSpeaking } from "@/lib/voiceUtils";
+import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 
 interface LessonItem {
   id: number;
@@ -48,6 +50,9 @@ export default function Home() {
   const [showAnswers, setShowAnswers] = useState<Map<number, boolean>>(new Map());
   const [refinementInput, setRefinementInput] = useState('');
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeakingNow, setIsSpeakingNow] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const generateMutation = trpc.lessons.generateLesson.useMutation();
@@ -170,6 +175,42 @@ export default function Home() {
     );
   }
 
+  const handleStartListening = () => {
+    const langCode = getLanguageCode(language);
+    setIsListening(true);
+    recognitionRef.current = startSpeechRecognition(
+      (text) => {
+        setTopic(prev => prev + (prev ? ' ' : '') + text);
+        setIsListening(false);
+        toast.success('Topic recorded');
+      },
+      (error) => {
+        console.error(error);
+        setIsListening(false);
+        toast.error(error);
+      },
+      langCode
+    );
+  };
+
+  const handleStopListening = () => {
+    stopSpeechRecognition(recognitionRef.current);
+    setIsListening(false);
+  };
+
+  const handleSpeakContent = (content: string) => {
+    const langCode = getLanguageCode(language);
+    setIsSpeakingNow(true);
+    speakText(content, { language: langCode }, () => {
+      setIsSpeakingNow(false);
+    });
+  };
+
+  const handleStopSpeaking = () => {
+    stopSpeech();
+    setIsSpeakingNow(false);
+  };
+
   const currentRefinements = selectedLessonId !== null ? (refinements.get(selectedLessonId) || []) : [];
 
   return (
@@ -222,12 +263,25 @@ export default function Home() {
 
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">Topic / Chapter</label>
-                <textarea
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., Newton's Third Law, Photosynthesis, French Revolution..."
-                  className="textarea-glass h-24"
-                />
+                <div className="flex gap-2">
+                  <textarea
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="e.g., Newton's Third Law, Photosynthesis, French Revolution..."
+                    className="textarea-glass h-24 flex-1"
+                  />
+                  <button
+                    onClick={isListening ? handleStopListening : handleStartListening}
+                    className={`px-4 py-2 rounded-lg transition-all ${
+                      isListening
+                        ? 'bg-red-500/80 hover:bg-red-600 text-white'
+                        : 'bg-blue-500/80 hover:bg-blue-600 text-white'
+                    } flex items-center justify-center`}
+                    title={isListening ? 'Stop listening' : 'Start listening'}
+                  >
+                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -312,6 +366,20 @@ export default function Home() {
                           </div>
                           {selectedLessonId === lesson.id && (
                             <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isSpeakingNow) {
+                                    handleStopSpeaking();
+                                  } else {
+                                    handleSpeakContent(lesson.content);
+                                  }
+                                }}
+                                className="text-foreground/50 hover:text-foreground transition-colors text-lg"
+                                title={isSpeakingNow ? 'Stop speaking' : 'Speak content'}
+                              >
+                                {isSpeakingNow ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                              </button>
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();

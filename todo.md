@@ -201,3 +201,14 @@ The Universal Classroom Assistant is fully functional with:
 - [x] Apply database migration successfully
 - [x] Dev server running with 0 TypeScript errors
 - [x] App verified in browser - Language dropdown working
+
+
+## PHASE 14: Voice Input & Output Features
+- [x] Add microphone button next to Topic input field
+- [x] Implement speech-to-text for topic input (voice recognition)
+- [x] Add text-to-speech button for generated content
+- [x] Read out generated lessons using voice synthesis
+- [x] Support multiple languages for voice output (English, Hindi, Indian languages)
+- [x] Create voiceUtils.ts with speech recognition and synthesis functions
+- [x] Add voice handler functions to Home.tsx
+- [x] Build successful with 0 TypeScript errors
