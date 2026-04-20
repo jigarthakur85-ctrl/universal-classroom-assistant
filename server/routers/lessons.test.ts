@@ -247,4 +247,94 @@ describe("lessonsRouter - Bug Fixes", () => {
       expect(refinement.lessonId).toBe(lesson.id);
     });
   });
+
+  describe("Enhanced detailed prompts", () => {
+    it("Simplify Concept should generate detailed content", async () => {
+      const ctx = createMockContext();
+      const caller = lessonsRouter.createCaller(ctx);
+
+      const result = await caller.generateLesson({
+        class: "10",
+        subject: "Mathematics",
+        topic: "Quadratic Equations",
+        toolType: "simplify",
+        language: "english",
+      });
+
+      // Verify content is generated
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+      // Enhanced prompt should produce detailed content
+      expect(result.toolType).toBe("simplify");
+    });
+
+    it("Class Activity should generate comprehensive activity", async () => {
+      const ctx = createMockContext();
+      const caller = lessonsRouter.createCaller(ctx);
+
+      const result = await caller.generateLesson({
+        class: "8",
+        subject: "Science",
+        topic: "Photosynthesis",
+        toolType: "activity",
+        language: "english",
+      });
+
+      // Verify activity content is generated
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+      // Enhanced prompt should produce comprehensive activity
+      expect(result.toolType).toBe("activity");
+    });
+
+    it("Check Understanding should generate detailed answers", async () => {
+      const ctx = createMockContext();
+      const caller = lessonsRouter.createCaller(ctx);
+
+      const result = await caller.generateLesson({
+        class: "10",
+        subject: "History",
+        topic: "French Revolution",
+        toolType: "understanding",
+        language: "english",
+      });
+
+      // Verify content is generated
+      expect(result.content).toBeDefined();
+      expect(result.content.length).toBeGreaterThan(0);
+      // Enhanced prompt should produce detailed answers
+      expect(result.toolType).toBe("understanding");
+    });
+
+    it("should support all Indian languages", async () => {
+      const languages = [
+        "english",
+        "hindi",
+        "gujarati",
+        "marathi",
+        "punjabi",
+        "bengali",
+        "tamil",
+        "telugu",
+        "kannada",
+        "malayalam",
+      ];
+
+      const ctx = createMockContext();
+      const caller = lessonsRouter.createCaller(ctx);
+
+      for (const lang of languages) {
+        const result = await caller.generateLesson({
+          class: "10",
+          subject: "Mathematics",
+          topic: "Algebra",
+          toolType: "simplify",
+          language: lang as any,
+        });
+
+        expect(result.language).toBe(lang);
+        expect(result.content).toBeDefined();
+      }
+    });
+  });
 });

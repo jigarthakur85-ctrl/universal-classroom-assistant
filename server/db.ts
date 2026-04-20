@@ -147,7 +147,23 @@ export async function createRefinement(lessonId: number, data: Omit<InsertRefine
     lessonId,
   });
   
-  return result;
+  // Try to extract insertId from result
+  const insertId = (result as any)?.insertId || (result as any)?.[0]?.insertId;
+  
+  if (insertId) {
+    return { insertId };
+  }
+  
+  // Fallback: fetch by lessonId and createdAt
+  const inserted = await db.select().from(refinements)
+    .where(eq(refinements.lessonId, lessonId))
+    .orderBy(desc(refinements.createdAt))
+    .limit(1);
+  
+  if (inserted.length > 0) {
+    return { insertId: inserted[0].id };
+  }
+  throw new Error("Failed to retrieve inserted refinement ID");
 }
 
 export async function getRefinementsByLesson(lessonId: number) {
@@ -169,7 +185,23 @@ export async function createAnswers(lessonId: number, answersList: Array<Omit<In
     }))
   );
   
-  return result;
+  // Try to extract insertId from result
+  const insertId = (result as any)?.insertId || (result as any)?.[0]?.insertId;
+  
+  if (insertId) {
+    return { insertId };
+  }
+  
+  // Fallback: fetch by lessonId and createdAt
+  const inserted = await db.select().from(answers)
+    .where(eq(answers.lessonId, lessonId))
+    .orderBy(desc(answers.createdAt))
+    .limit(1);
+  
+  if (inserted.length > 0) {
+    return { insertId: inserted[0].id };
+  }
+  throw new Error("Failed to retrieve inserted answer ID");
 }
 
 export async function getAnswersByLesson(lessonId: number) {
