@@ -24,6 +24,7 @@ export type Subject =
   | 'Accountancy'
   | 'Business Studies'
   | 'Economics'
+  | 'Statistics'
   // Class 11-12 Arts/Humanities
   | 'History'
   | 'Geography'
@@ -49,10 +50,10 @@ export const SUBJECTS_BY_CLASS: Record<ClassLevel, Subject[]> = {
   '9': ['Mathematics', 'English', 'Hindi', 'Science', 'Social Science', 'Sanskrit'],
   '10': ['Mathematics', 'English', 'Hindi', 'Science', 'Social Science', 'Sanskrit'],
   '11-Science': ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'Computer Science', 'English', 'Hindi'],
-  '11-Commerce': ['Accountancy', 'Business Studies', 'Economics', 'English', 'Hindi'],
+  '11-Commerce': ['Accountancy', 'Business Studies', 'Economics', 'Statistics', 'English', 'Hindi'],
   '11-Arts': ['History', 'Geography', 'Political Science', 'Psychology', 'Sociology', 'English', 'Hindi'],
   '12-Science': ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'Computer Science', 'English', 'Hindi'],
-  '12-Commerce': ['Accountancy', 'Business Studies', 'Economics', 'English', 'Hindi'],
+  '12-Commerce': ['Accountancy', 'Business Studies', 'Economics', 'Statistics', 'English', 'Hindi'],
   '12-Arts': ['History', 'Geography', 'Political Science', 'Psychology', 'Sociology', 'English', 'Hindi'],
 };
 
