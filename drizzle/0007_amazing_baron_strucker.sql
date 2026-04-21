@@ -1,0 +1,1 @@
+ALTER TABLE `lessons` MODIFY COLUMN `class` varchar(20) NOT NULL;

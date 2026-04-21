@@ -31,7 +31,7 @@ export type InsertUser = typeof users.$inferInsert;
 export const lessons = mysqlTable("lessons", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  class: varchar("class", { length: 10 }).notNull(), // e.g., "1", "10", "11-Science"
+  class: varchar("class", { length: 20 }).notNull(), // e.g., "1", "10", "11-Science", "11-Commerce"
   subject: varchar("subject", { length: 64 }).notNull(), // e.g., "Mathematics", "Physics"
   topic: text("topic").notNull(), // e.g., "Newton's Third Law"
   toolType: mysqlEnum("toolType", ["simplify", "activity", "understanding"]).notNull(),

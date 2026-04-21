@@ -50,6 +50,13 @@
       "when": 1776663325852,
       "tag": "0006_solid_jigsaw",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1776754893959,
+      "tag": "0007_amazing_baron_strucker",
+      "breakpoints": true
     }
   ]
 }
