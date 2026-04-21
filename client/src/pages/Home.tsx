@@ -52,11 +52,14 @@ export default function Home() {
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isSpeakingNow, setIsSpeakingNow] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState<number | null>(null);
+  const [editedContent, setEditedContent] = useState('');
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const generateMutation = trpc.lessons.generateLesson.useMutation();
   const refineMutation = trpc.lessons.refineLesson.useMutation();
+  const updateMutation = trpc.lessons.updateLesson.useMutation();
 
   const subjects = SUBJECTS_BY_CLASS[selectedClass] || [];
 
@@ -398,6 +401,17 @@ export default function Home() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setEditingLessonId(editingLessonId === lesson.id ? null : lesson.id);
+                                  setEditedContent(lesson.content);
+                                }}
+                                className="text-foreground/50 hover:text-foreground transition-colors text-lg"
+                                title={editingLessonId === lesson.id ? 'Cancel edit' : 'Edit content'}
+                              >
+                                {editingLessonId === lesson.id ? '✕' : '✏️'}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedLessonId(null);
                                 }}
                                 className="text-foreground/50 hover:text-foreground transition-colors text-lg font-bold"
@@ -411,7 +425,52 @@ export default function Home() {
                         <p className="text-sm text-foreground/70 mb-3">
                           <span className="font-semibold">{lesson.subject}</span> • {lesson.topic}
                         </p>
-                        <Streamdown className="text-foreground">{lesson.content}</Streamdown>
+                        {editingLessonId === lesson.id ? (
+                          <div className="space-y-2">
+                            <textarea
+                              value={editedContent}
+                              onChange={(e) => setEditedContent(e.target.value)}
+                              className="w-full p-3 bg-background/50 border border-purple-500/30 rounded-lg text-foreground text-sm focus:outline-none focus:border-purple-500 min-h-[200px] font-mono"
+                              placeholder="Edit your content here..."
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await updateMutation.mutateAsync({
+                                      lessonId: lesson.id,
+                                      content: editedContent,
+                                    });
+                                    const updatedLessons = lessons.map(l => 
+                                      l.id === lesson.id ? { ...l, content: editedContent } : l
+                                    );
+                                    setLessons(updatedLessons);
+                                    setEditingLessonId(null);
+                                    toast.success('Content updated!');
+                                  } catch (error) {
+                                    toast.error('Failed to update');
+                                  }
+                                }}
+                                disabled={updateMutation.isPending}
+                                className="flex-1 btn-glass text-sm"
+                              >
+                                {updateMutation.isPending ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingLessonId(null);
+                                }}
+                                className="flex-1 btn-glass text-sm opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Streamdown className="text-foreground">{lesson.content}</Streamdown>
+                        )}
                       </div>
 
                       {currentRefinements.length > 0 && selectedLessonId !== null && selectedLessonId === lesson.id && (

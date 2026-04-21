@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { createLesson, getLessonsByUser, createRefinement, getRefinementsByLesson, createAnswers, getAnswersByLesson, getLessonById } from "../db";
+import { createLesson, getLessonsByUser, createRefinement, getRefinementsByLesson, createAnswers, getAnswersByLesson, getLessonById, getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { lessons } from "../../drizzle/schema";
 
 const GenerateLessonInput = z.object({
   class: z.string(),
@@ -34,14 +36,57 @@ const systemPrompts = {
   simplify: (language: string) => `You are an Expert Learning Experience Designer specializing in CBSE/NCERT curriculum.
 Your role is to provide DETAILED, COMPREHENSIVE explanations of complex educational concepts that teachers can use directly in their classrooms.
 
-IMPORTANT: Provide COMPLETE, IN-DEPTH explanations with:
-1. Clear definition of the concept
-2. Multiple real-life analogies and examples
-3. Step-by-step breakdown of how it works
-4. Why it matters and its applications
-5. Common misconceptions to address
-6. Tips for teaching this concept effectively
+IMPORTANT: Provide COMPLETE, IN-DEPTH explanations with ALL of the following:
 
+1. **CONCEPT DEFINITION**: Clear, precise definition of the concept
+
+2. **CHAPTER/UNIT BREAKDOWN** (if applicable):
+   - Break down the topic into sub-chapters or units
+   - List key concepts in each chapter
+   - Show how chapters connect to each other
+   - Highlight which chapters are most important
+
+3. **KEY FORMULAS** (if applicable): 
+   - List all relevant formulas with proper mathematical notation
+   - Explain what each variable/symbol means
+   - Show how to use each formula with step-by-step examples
+   - Specify which chapter each formula belongs to
+
+4. **DETAILED EXPLANATION**: 
+   - Break down the concept into logical steps
+   - Explain the 'why' behind each step
+   - Connect to previous concepts students should know
+   - Reference relevant chapters
+
+5. **MULTIPLE EXAMPLES**:
+   - Provide 3-4 worked examples of increasing difficulty
+   - Show all calculation steps clearly
+   - Include both numerical and conceptual examples
+
+6. **REAL-WORLD APPLICATIONS**:
+   - Show how this concept is used in real life
+   - Connect to practical scenarios relevant to students
+   - Explain why this matters
+
+7. **COMMON MISCONCEPTIONS**:
+   - List 2-3 common mistakes students make
+   - Explain why these misconceptions occur
+   - Clarify the correct understanding
+
+8. **TEACHING TIPS FOR EDUCATORS**:
+   - Specific strategies for teaching this concept
+   - How to address student difficulties
+   - Engagement techniques
+   - Time management suggestions
+
+9. **TEACHER SUGGESTIONS**:
+   - Recommended teaching sequence
+   - Prerequisite concepts to review
+   - Extension activities for advanced students
+   - Assessment strategies
+   - Common student questions and answers
+
+Format your response with clear headings for each section.
 Make it detailed enough that a teacher can use it directly without needing additional research.
 Provide the explanation in ${LANGUAGE_NAMES[language] || 'English'} ONLY. Do not mix languages.`,
 
@@ -175,6 +220,39 @@ export const lessonsRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to refine lesson',
+        });
+      }
+    }),
+
+  updateLesson: protectedProcedure
+    .input(z.object({
+      lessonId: z.number(),
+      content: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const lesson = await getLessonById(input.lessonId);
+        if (!lesson) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Lesson not found' });
+        }
+
+        // Update lesson content in database
+        const database = await getDb();
+        if (!database) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        }
+        await database.update(lessons).set({ content: input.content }).where(eq(lessons.id, input.lessonId));
+
+        return {
+          id: input.lessonId,
+          content: input.content,
+          updatedAt: new Date(),
+        };
+      } catch (error) {
+        console.error("Error updating lesson:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update lesson',
         });
       }
     }),
